@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Spending Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            background-color: #007acc;
+            color: white;
+            width: 100%;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 2rem;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            background-color: white;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #007acc;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            margin-top: 1rem;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #005f99;
+        }
+
+        .output {
+            margin-top: 1rem;
+            padding: 1rem;
+            border: 1px solid #007acc;
+            border-radius: 5px;
+            background-color: #f0f8ff;
+        }
+
+        .highlight {
+            font-weight: bold;
+            color: #007acc;
+        }
+
+        .delete-btn {
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 0.3rem 0.6rem;
+            margin-left: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .delete-btn:hover {
+            background-color: darkred;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>💰 Daily Spending Tracker 💰</h1>
+    </header>
+    <div class="container">
+        <label for="daily-allowance">💵 Enter your daily allowance:</label>
+        <input type="number" id="daily-allowance" placeholder="Enter amount in ₱" min="1">
+        <button onclick="calculateBudget()">📊 Calculate Budget</button>
+        <div class="output" id="budget-output" style="display: none;"></div>
+        
+        <h2>📅 How You Spent Today:</h2>
+        <label for="needs">🛒 Needs:</label>
+        <input type="number" id="needs" placeholder="Enter amount for Needs" min="0">
+        <label for="wants">🎮 Wants:</label>
+        <input type="number" id="wants" placeholder="Enter amount for Wants" min="0">
+        <label for="savings">💰 Savings:</label>
+        <input type="number" id="savings" placeholder="Enter amount for Savings" min="0">
+        <button onclick="trackSpending()">💾 Save Spending</button>
+    
+        <p id="adviceMessage"></p>
+
+        <h2>📈 Accumulated Totals:</h2>
+        <div class="output" id="accumulated-totals" style="display: none;"></div>
+        
+        <h2>📊 Saved Data:</h2>
+        <div class="output" id="saved-data" style="display: none;"></div>
+    </div>
+    
+    <script>
+        function calculateBudget() {
+            const allowance = parseFloat(document.getElementById("daily-allowance").value);
+            if (!allowance || allowance <= 0) {
+                alert("⚠️ Please enter a valid allowance amount.");
+                return;
+            }
+            const needs = (allowance * 0.5).toFixed(2);
+            const wants = (allowance * 0.3).toFixed(2);
+            const savings = (allowance * 0.2).toFixed(2);
+            document.getElementById("budget-output").style.display = "block";
+            document.getElementById("budget-output").innerHTML = `
+                <p>📢 Based on your allowance of <span class="highlight">₱${allowance}</span>, here's your suggested budget:</p>
+                <ul>
+                    <li>🛒 Needs: <span class="highlight">₱${needs}</span></li>
+                    <li>🎮 Wants: <span class="highlight">₱${wants}</span></li>
+                    <li>💰 Savings: <span class="highlight">₱${savings}</span></li>
+                </ul>
+            `;
+            localStorage.setItem("dailyAllowance", allowance);
+        }
+
+        function showAdvice(allowance, needs, wants, savings) {
+            if (allowance <= 0) return;
+
+            let expectedNeeds = allowance * 0.5;
+            let expectedWants = allowance * 0.3;
+            let expectedSavings = allowance * 0.2;
+            let message = "";
+
+            if (needs < expectedNeeds) {
+                message += "⚠️ You seemed to be spending less than expected on necessities. Make sure to cover necessities first before anything else! But if you don't need to spend that much on necessities, that's okay!\n";
+            }
+
+            if (wants > expectedWants) {
+                message += "🤔 Hmm... Looks like you're overspending on discretionary items. While it's okay to treat yourself, remember to set priorities!\n";
+            }
+
+            if (savings < expectedSavings) {
+                message += "💡 Try to save at least 20% of your allowance regularly. It'll help you prepare for emergencies. Savings matter!\n";
+            }
+
+            if (savings > expectedSavings) {
+                message += "😯 You saved more than 20% of your allowance, great! You'll have extra money in case of sudden expenses! But remember, saving should not come at the expense of your needs.\n";
+            }
+
+            if (!message) {
+                message = "🎉 Good job! It seems like you're managing your budget well. Keep it up!";
+            }
+
+            document.getElementById("adviceMessage").innerText = message;
+        }
+
+
+        function trackSpending() {
+            const date = new Date().toISOString().split('T')[0];
+            const needs = parseFloat(document.getElementById("needs").value) || 0;
+            const wants = parseFloat(document.getElementById("wants").value) || 0;
+            const savings = parseFloat(document.getElementById("savings").value) || 0;
+            const allowance = parseFloat(localStorage.getItem("dailyAllowance")) || 0;
+
+            if (needs <= 0 && wants <= 0 && savings <= 0) {
+                alert("⚠️ Please enter valid spending amounts.");
+                return;
+            }
+
+            saveData(date, needs, wants, savings);
+            displayAccumulatedTotals();
+            displaySavedData();
+            showAdvice(allowance, needs, wants, savings); // 💡 Calls the new function to provide advice!
+        }
+
+
+        function saveData(date, needs, wants, savings) {
+            let savedData = JSON.parse(localStorage.getItem("spendingData")) || [];
+            const newEntry = { date, needs, wants, savings };
+            savedData.push(newEntry);
+            localStorage.setItem("spendingData", JSON.stringify(savedData));
+            updateAccumulatedTotals(needs, wants, savings);
+        }
+
+        function updateAccumulatedTotals(needs, wants, savings) {
+            let accumulatedNeeds = parseFloat(localStorage.getItem("accumulatedNeeds")) || 0;
+            let accumulatedWants = parseFloat(localStorage.getItem("accumulatedWants")) || 0;
+            let accumulatedSavings = parseFloat(localStorage.getItem("accumulatedSavings")) || 0;
+
+            accumulatedNeeds += needs;
+            accumulatedWants += wants;
+            accumulatedSavings += savings;
+
+            localStorage.setItem("accumulatedNeeds", accumulatedNeeds);
+            localStorage.setItem("accumulatedWants", accumulatedWants);
+            localStorage.setItem("accumulatedSavings", accumulatedSavings);
+        }
+
+        function displayAccumulatedTotals() {
+            const accumulatedNeeds = parseFloat(localStorage.getItem("accumulatedNeeds")) || 0;
+            const accumulatedWants = parseFloat(localStorage.getItem("accumulatedWants")) || 0;
+            const accumulatedSavings = parseFloat(localStorage.getItem("accumulatedSavings")) || 0;
+
+            document.getElementById("accumulated-totals").style.display = "block";
+            document.getElementById("accumulated-totals").innerHTML = `
+                <p>🛒 Total Spent on Needs: <span class="highlight">₱${accumulatedNeeds.toFixed(2)}</span></p>
+                <p>🎮 Total Spent on Wants: <span class="highlight">₱${accumulatedWants.toFixed(2)}</span></p>
+                <p>💰 Total Savings: <span class="highlight">₱${accumulatedSavings.toFixed(2)}</span></p>
+            `;
+        }
+
+        function displaySavedData() {
+            let savedData = JSON.parse(localStorage.getItem("spendingData")) || [];
+            if (savedData.length === 0) {
+                document.getElementById("saved-data").style.display = "none";
+                return;
+            }
+            let dataHTML = "<p>Previous Records:</p><ul>";
+            savedData.forEach((entry, index) => {
+                dataHTML += `
+                    <li>
+                        ${entry.date} - Needs: ₱${entry.needs.toFixed(2)}, Wants: ₱${entry.wants.toFixed(2)}, Savings: ₱${entry.savings.toFixed(2)} 
+                        <button onclick="deleteEntry(${index})">Delete</button>
+                    </li>`;
+            });
+            dataHTML += "</ul>";
+            document.getElementById("saved-data").style.display = "block";
+            document.getElementById("saved-data").innerHTML = dataHTML;
+        }
+
+        function deleteEntry(index) {
+            let savedData = JSON.parse(localStorage.getItem("spendingData")) || [];
+            const entryToDelete = savedData[index];
+            savedData.splice(index, 1); // Remove the entry at the specified index
+            localStorage.setItem("spendingData", JSON.stringify(savedData)); // Update local storage
+            updateAccumulatedTotalsAfterDelete(entryToDelete); // Update accumulated totals
+            displaySavedData(); // Refresh the displayed data
+        }
+
+        function updateAccumulatedTotalsAfterDelete(entry) {
+            let accumulatedNeeds = parseFloat(localStorage.getItem("accumulatedNeeds")) || 0;
+            let accumulatedWants = parseFloat(localStorage.getItem("accumulatedWants")) || 0;
+            let accumulatedSavings = parseFloat(localStorage.getItem("accumulatedSavings")) || 0;
+
+            // Ensure totals do not go negative
+            accumulatedNeeds = Math.max(0, accumulatedNeeds - entry.needs);
+            accumulatedWants = Math.max(0, accumulatedWants - entry.wants);
+            accumulatedSavings = Math.max(0, accumulatedSavings - entry.savings);
+
+            localStorage.setItem("accumulatedNeeds", accumulatedNeeds);
+            localStorage.setItem("accumulatedWants", accumulatedWants);
+            localStorage.setItem("accumulatedSavings", accumulatedSavings);
+            displayAccumulatedTotals(); // Refresh the displayed accumulated totals
+        }
+
+        window.onload = function() {
+            displayAccumulatedTotals();
+            displaySavedData();
+        };
+    </script>
+</body>
+</html>
